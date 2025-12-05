@@ -6,15 +6,15 @@ on:
       duration:
         description: '🕐 Thời gian sử dụng'
         required: false
-        default: '6h'
+        default: '5h40m'
         type: choice
         options:
-        - '6h'
+        - '5h40m'
 
 jobs:
   Premium-RDP-Setup:
     runs-on: windows-latest
-    timeout-minutes: 360  # 6 jam
+    timeout-minutes: 340  # 5 jam 40 menit
     
     steps:
       # BANNER CHÀO MỪNG
@@ -24,7 +24,7 @@ jobs:
           Write-Host ""
           Write-Host "🤖 AI STV PREMIUM RDP SERVER" -ForegroundColor Yellow
           Write-Host "⚡ Powered by AI STV" -ForegroundColor Green
-          Write-Host "🕒 Thời gian: SELAMANYA (siklus 6h + 10s)" -ForegroundColor Magenta
+          Write-Host "🕒 Thời gian: SELAMANYA (siklus 5h40m + 10s)" -ForegroundColor Magenta
           Write-Host ""
           
           # Hiệu ứng loading
@@ -241,9 +241,9 @@ jobs:
               $matKhau = "Không thể đọc mật khẩu"
           }
           
-          # Siklus 6 jam
-          $totalMinutes = 360
-          $displayTime = "6 giờ (siklus berulang)"
+          # Siklus 5 jam 40 menit
+          $totalMinutes = 340
+          $displayTime = "5 jam 40 menit (siklus berulang)"
           
           $timeZone = [System.TimeZoneInfo]::FindSystemTimeZoneById("SE Asia Standard Time")
           $thoiGianBatDau = [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date).ToUniversalTime(), $timeZone)
@@ -256,8 +256,8 @@ jobs:
           Write-Host "│ 🌐  Địa chỉ: $env:TAILSCALE_IP" -ForegroundColor White
           Write-Host "│ 👤  Tài khoản: AISTV-PREMIUM" -ForegroundColor White
           Write-Host "│ 🔐  Mật khẩu: $matKhau" -ForegroundColor White
-          Write-Host "│ ⏰  Mode: SELAMANYA (6h + 10s cycle)" -ForegroundColor Magenta
-          Write-Host "│ 🔄  Siklus: 6 jam kerja + 10 detik jeda" -ForegroundColor White
+          Write-Host "│ ⏰  Mode: SELAMANYA (5h40m + 10s cycle)" -ForegroundColor Magenta
+          Write-Host "│ 🔄  Siklus: 5 jam 40 menit + 10 detik jeda" -ForegroundColor White
           Write-Host "│ 🕐  Bắt đầu: $($thoiGianBatDau.ToString('HH:mm:ss'))" -ForegroundColor White
           Write-Host "│ 🕐  Reset: $($thoiGianKetThuc.ToString('HH:mm:ss'))" -ForegroundColor White
           Write-Host "│ 📍  Port: 3389" -ForegroundColor White
@@ -266,100 +266,119 @@ jobs:
           Write-Host "│   1. Mở Remote Desktop Connection                 │" -ForegroundColor Yellow
           Write-Host "│   2. Nhập: $env:TAILSCALE_IP                      │" -ForegroundColor Yellow
           Write-Host "│   3. User: AISTV-PREMIUM | Password: trên          │" -ForegroundColor Yellow
-          Write-Host "│   4. Koneksi akan auto-reset setiap 6 jam         │" -ForegroundColor Yellow
+          Write-Host "│   4. Koneksi akan auto-reset setiap 5h40m         │" -ForegroundColor Yellow
           Write-Host "└───────────────────────────────────────────┘" -ForegroundColor Cyan
           
           echo "TOTAL_MINUTES=$totalMinutes" >> $env:GITHUB_ENV
 
-      # DUY TRÌ PHIÊN ỔN ĐỊNH DENGAN SIKLUS
+      # DUY TRÌ PHIÊN ỔN ĐỊNH DENGAN SIKLUS 5h40m
       - name: ⏳ DUY TRÌ PHIÊN LÀM VIỆC (SELAMANYA)
         run: |
           $matKhau = Get-Content $env:TEMP\rdp_password.txt -ErrorAction SilentlyContinue
-          $totalMinutes = $env:TOTAL_MINUTES
+          $totalMinutes = 340  # 5 jam 40 menit tetap
           
           $timeZone = [System.TimeZoneInfo]::FindSystemTimeZoneById("SE Asia Standard Time")
-          $thoiGianBatDau = [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date).ToUniversalTime(), $timeZone)
-          $thoiGianKetThuc = $thoiGianBatDau.AddMinutes($totalMinutes)
           
           Write-Host ""
           Write-Host "🔄 BẮT ĐẦU PHIÊN LÀM VIỆC SELAMANYA..." -ForegroundColor Yellow
           Write-Host "💎 Phiên: AI STV PREMIUM (UNLIMITED)" -ForegroundColor Magenta
           Write-Host "🔗 Kết nối: $env:TAILSCALE_IP" -ForegroundColor Cyan
-          Write-Host "🔄 Mode: 6 jam kerja + 10 detik jeda" -ForegroundColor Green
-          Write-Host "🕐 Bắt đầu: $($thoiGianBatDau.ToString('HH:mm:ss'))" -ForegroundColor Green
+          Write-Host "🔄 Mode: 5 jam 40 menit kerja + 10 detik jeda" -ForegroundColor Green
+          Write-Host "⏰ Setiap siklus: 5h 40m = 340 menit" -ForegroundColor Green
           Write-Host ""
           
           # Counter untuk siklus
           $cycleCount = 0
           
-          # Monitor script
+          # Monitor script untuk cek service
           $monitorScript = {
               $lastLogTime = Get-Date
+              $checkCount = 0
               while ($true) {
                   $currentTime = Get-Date
+                  $checkCount++
                   
+                  # Log setiap 2 menit
                   if (($currentTime - $lastLogTime).TotalMinutes -ge 2) {
                       $termService = Get-Service -Name TermService -ErrorAction SilentlyContinue
                       $rdpConnections = Get-NetTCPConnection -LocalPort 3389 -ErrorAction SilentlyContinue | Where-Object {$_.State -eq 'Established'}
                       
-                      Write-Host "[$($currentTime.ToString('HH:mm:ss'))] 📊 Status - RDP: $($termService.Status), Connections: $($rdpConnections.Count)" -ForegroundColor Blue
+                      $statusMsg = "[$($currentTime.ToString('HH:mm:ss'))] 📊 Cycle $($env:CYCLE_NUM) - RDP: $($termService.Status)"
+                      $statusMsg += ", Connections: $($rdpConnections.Count)"
+                      $statusMsg += ", Checks: $checkCount"
+                      
+                      Write-Host $statusMsg -ForegroundColor Blue
                       $lastLogTime = $currentTime
                   }
                   
+                  # Auto-restart service jika mati
                   $termService = Get-Service -Name TermService -ErrorAction SilentlyContinue
                   if ($termService.Status -ne 'Running') {
-                      Write-Host "[$($currentTime.ToString('HH:mm:ss'))] 🔄 Restarting TermService..." -ForegroundColor Yellow
-                      Start-Service -Name TermService -ErrorAction SilentlyContinue
+                      Write-Host "[$($currentTime.ToString('HH:mm:ss'))] ⚠️  Service stopped, restarting..." -ForegroundColor Yellow
+                      Start-Service -Name TermService -Force -ErrorAction SilentlyContinue
+                      Start-Sleep -Seconds 5
                   }
                   
                   Start-Sleep -Seconds 30
               }
           }
           
-          # Jalankan monitor di background
-          Start-Job -ScriptBlock $monitorScript -Name "SystemMonitor"
-          
-          # Main loop untuk siklus 6 jam
+          # Main loop untuk siklus 5 jam 40 menit
           while ($true) {
               $cycleCount++
+              $env:CYCLE_NUM = $cycleCount
               $cycleStartTime = Get-Date
-              $cycleEndTime = $cycleStartTime.AddMinutes(360) # 6 jam
+              $cycleEndTime = $cycleStartTime.AddMinutes(340) # 5 jam 40 menit
               
               Write-Host ""
-              Write-Host "═══════════════════════════════════════════" -ForegroundColor Magenta
-              Write-Host "🚀 SIKLUS KE-$cycleCount DIMULAI" -ForegroundColor Green
-              Write-Host "⏰ Waktu: $($cycleStartTime.ToString('HH:mm:ss'))" -ForegroundColor Cyan
-              Write-Host "⏳ Durasi: 6 jam (360 menit)" -ForegroundColor Cyan
+              Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Magenta
+              Write-Host "🚀 SIKLUS KE-$cycleCount DIMULAI (5h40m)" -ForegroundColor Green
+              Write-Host "⏰ Waktu mulai: $($cycleStartTime.ToString('HH:mm:ss'))" -ForegroundColor Cyan
+              Write-Host "⏳ Durasi: 5 jam 40 menit (340 menit)" -ForegroundColor Cyan
               Write-Host "🕐 Selesai: $($cycleEndTime.ToString('HH:mm:ss'))" -ForegroundColor Cyan
-              Write-Host "═══════════════════════════════════════════" -ForegroundColor Magenta
+              Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Magenta
               Write-Host ""
+              
+              # Jalankan monitor di background untuk siklus ini
+              Start-Job -ScriptBlock $monitorScript -Name "SystemMonitor-Cycle$cycleCount"
               
               # Timer untuk siklus saat ini
               $frames = @('⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏')
               $colors = @('Red', 'Yellow', 'Green', 'Cyan', 'Blue', 'Magenta')
               $siklusStart = Get-Date
+              $lastServiceCheck = Get-Date
               
               do {
                   $thoiGianHienTai = [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date).ToUniversalTime(), $timeZone)
                   $thoiGianConLai = $cycleEndTime - $thoiGianHienTai
                   
                   if ($thoiGianConLai.TotalSeconds -gt 0) {
-                      $jamSiklus = [math]::Floor(($cycleEndTime - $thoiGianHienTai).TotalHours)
-                      $menitSiklus = [math]::Floor(($cycleEndTime - $thoiGianHienTai).TotalMinutes % 60)
-                      $detikSiklus = [math]::Floor(($cycleEndTime - $thoiGianHienTai).TotalSeconds % 60)
+                      # Hitung waktu dalam jam, menit, detik
+                      $totalDetik = [math]::Max(0, [math]::Floor($thoiGianConLai.TotalSeconds))
+                      $jamSiklus = [math]::Floor($totalDetik / 3600)
+                      $sisaDetik = $totalDetik % 3600
+                      $menitSiklus = [math]::Floor($sisaDetik / 60)
+                      $detikSiklus = $sisaDetik % 60
                       
                       $frame = $frames[([int]((Get-Date) - $siklusStart).TotalSeconds) % $frames.Length]
                       $color = $colors[([int]((Get-Date) - $siklusStart).TotalMinutes) % $colors.Length]
                       
-                      Write-Host "`r$frame [$($thoiGianHienTai.ToString('HH:mm:ss'))] Siklus $cycleCount - Waktu: $jamSiklus:$menitSiklus:$detikSiklus | Total: $cycleCount cycles" -NoNewline -ForegroundColor $color
+                      # Tampilkan dengan format yang rapi
+                      Write-Host "`r$frame [$($thoiGianHienTai.ToString('HH:mm:ss'))] " -NoNewline -ForegroundColor $color
+                      Write-Host "Siklus " -NoNewline -ForegroundColor White
+                      Write-Host "$cycleCount " -NoNewline -ForegroundColor Yellow
+                      Write-Host "| Waktu: " -NoNewline -ForegroundColor White
+                      Write-Host "$jamSiklus:$menitSiklus:$detikSiklus " -NoNewline -ForegroundColor Green
+                      Write-Host "| Total: $cycleCount cycles" -NoNewline -ForegroundColor Magenta
                       
-                      # Check service setiap 30 detik
-                      if ([math]::Floor($detikSiklus % 30) -eq 0) {
+                      # Check service setiap 1 menit
+                      if ((Get-Date) - $lastServiceCheck).TotalMinutes -ge 1) {
                           $termService = Get-Service -Name TermService -ErrorAction SilentlyContinue
                           if ($termService.Status -ne 'Running') {
-                              Write-Host "`n[$($thoiGianHienTai.ToString('HH:mm:ss'))] ⚠️  Restarting service..." -ForegroundColor Yellow
+                              Write-Host "`n[$($thoiGianHienTai.ToString('HH:mm:ss'))] ⚡ Restarting service..." -ForegroundColor Yellow
                               Start-Service -Name TermService -Force -ErrorAction SilentlyContinue
                           }
+                          $lastServiceCheck = Get-Date
                       }
                       
                       Start-Sleep -Seconds 5
@@ -367,25 +386,27 @@ jobs:
                   
               } while ($thoiGianConLai.TotalSeconds -gt 0)
               
+              # Hentikan monitor job untuk siklus ini
+              Get-Job -Name "SystemMonitor-Cycle$cycleCount" -ErrorAction SilentlyContinue | Stop-Job -PassThru | Remove-Job -Force
+              
               Write-Host ""
-              Write-Host "═══════════════════════════════════════════" -ForegroundColor Yellow
+              Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Yellow
               Write-Host "🔄 SIKLUS KE-$cycleCount SELESAI" -ForegroundColor Yellow
-              Write-Host "⏰ Waktu: $(Get-Date -Format 'HH:mm:ss')" -ForegroundColor Yellow
-              Write-Host "⏸️  Jeda 10 detik sebelum siklus berikutnya..." -ForegroundColor Yellow
-              Write-Host "═══════════════════════════════════════════" -ForegroundColor Yellow
+              Write-Host "⏰ Waktu selesai: $(Get-Date -Format 'HH:mm:ss')" -ForegroundColor Yellow
+              Write-Host "✅ Durasi: 5 jam 40 menit tercapai" -ForegroundColor Green
+              Write-Host "⏸️  Jeda 10 detik sebelum siklus $($cycleCount + 1)..." -ForegroundColor Yellow
+              Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Yellow
               
               # Jeda 10 detik antara siklus
+              Write-Host "`n⏳ Menunggu 10 detik..." -ForegroundColor Magenta
               for ($i = 10; $i -gt 0; $i--) {
-                  Write-Host "`r⏸️  Jeda: $i detik..." -NoNewline -ForegroundColor Magenta
+                  Write-Host "`r⏸️  Jeda: $i detik " -NoNewline -ForegroundColor Cyan
                   Start-Sleep -Seconds 1
               }
-              Write-Host ""
+              Write-Host "`r🎯 Memulai siklus berikutnya...                  " -ForegroundColor Green
           }
-          
-          # Cleanup (tidak akan pernah sampai sini)
-          Get-Job -Name "SystemMonitor" -ErrorAction SilentlyContinue | Stop-Job -PassThru | Remove-Job -Force
 
-      # DỌN DẸP CHUYÊN NGHIỆP
+      # DỌN DẸP CHUYÊN NGHIỆP (akan dipanggil jika workflow dihentikan manual)
       - name: 🧹 DỌN DẸP HỆ THỐNG
         if: always()
         run: |
@@ -426,7 +447,8 @@ jobs:
               Start-Sleep -Milliseconds 300
           }
           
+          # Hapus semua jobs yang tersisa
           Get-Job | Stop-Job -PassThru | Remove-Job -Force -ErrorAction SilentlyContinue
           
           Write-Host ""
-          Write-Host "🎉 Dọn dẹp hoàn tất! Hẹn gặp lại! 👋" -ForegroundColor Green
+          Write-Host "🎉 Dọn dẹp hoàn tất! Terima kasih telah menggunakan AI STV PREMIUM! 👋" -ForegroundColor Green
